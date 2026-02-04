@@ -7,3 +7,6 @@ class ImageModel():
 
     def describe(self):
         print(self.model.config)
+    
+    def get_model(self):
+        return self.model

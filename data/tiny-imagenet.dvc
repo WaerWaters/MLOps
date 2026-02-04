@@ -1,0 +1,6 @@
+outs:
+- md5: 3500cb7f2b0b1b58ab0c70345cf40596.dir
+  size: 216042900
+  nfiles: 7
+  hash: md5
+  path: tiny-imagenet

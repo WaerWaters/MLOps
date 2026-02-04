@@ -1,0 +1,14 @@
+# Data
+data_path: "data/tiny-imagenet"
+train_split: 0.7
+val_split: 0.15
+test_split: 0.15
+
+# Training
+learning_rate: 0.0005
+weight_decay: 0.01
+batch_size: 128
+num_epochs: 1
+
+# Output
+save_path: "trained_models/test_model.pt"
