@@ -1,9 +1,5 @@
 [core]
     remote = dvmlminio
-['remote "dvmlbucket"']
-    url = http://172.24.198.42:9001/browser/dvml
-['remote "storage"']
-    url = http://172.24.198.42:9001/browser/dvml
 ['remote "dvmlminio"']
     url = s3://dvml
     endpointurl = http://172.24.198.42:9000
