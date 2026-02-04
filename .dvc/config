@@ -1,0 +1,6 @@
+[core]
+    remote = storage
+['remote "dvmlbucket"']
+    url = http://172.24.198.42:9001/browser/dvml
+['remote "storage"']
+    url = http://172.24.198.42:9001/browser/dvml
