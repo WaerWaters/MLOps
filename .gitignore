@@ -2,3 +2,4 @@
 data/tiny-imagenet
 trained_models/*
 !trained_models/.gitkeep
+__pycache__/
