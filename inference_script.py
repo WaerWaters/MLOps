@@ -24,10 +24,7 @@ data = Data(data_path)
 splits = data.get_train_val_test_sets(data_splits)
 
 test_loader = DataLoader(
-    splits["test"],
-    batch_size=bs,
-    shuffle=False,
-    collate_fn=data.collate_fn
+    splits["test"], batch_size=bs, shuffle=False, collate_fn=data.collate_fn
 )
 
 model = ImageModel().get_model()
@@ -54,6 +51,6 @@ with torch.no_grad():
 avg_loss = total_loss / len(test_loader)
 accuracy = correct / total
 
-print(f"\nTest Results:")
+print("\nTest Results:")
 print(f"  Loss:     {avg_loss:.4f}")
 print(f"  Accuracy: {accuracy:.4f} ({correct}/{total})")

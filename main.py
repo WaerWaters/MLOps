@@ -1,4 +1,3 @@
-from models.image_classifier import ImageModel
 from data.get_data import Data
 
 

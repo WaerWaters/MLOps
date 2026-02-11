@@ -28,23 +28,22 @@ splits = data.get_train_val_test_sets(data_splits)
 model = ImageModel().get_model().to(device)
 optimizer = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=wd)
 
-train_loader = DataLoader(splits["train"], 
-                          batch_size=bs, 
-                          shuffle=True, 
-                          collate_fn=data.collate_fn)
+train_loader = DataLoader(
+    splits["train"], batch_size=bs, shuffle=True, collate_fn=data.collate_fn
+)
 
 model.train()
 for epoch in range(epochs):
     for batch in train_loader:
         batch = {k: v.to(device) for k, v in batch.items()}
-        
+
         outputs = model(**batch)
         loss = outputs.loss
-        
+
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
-        
+
         print(f"Loss: {loss.item():.4f}")
 
 torch.save(model.state_dict(), save_path)
