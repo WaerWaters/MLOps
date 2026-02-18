@@ -9,4 +9,5 @@ COPY . .
 RUN useradd app
 USER app
 
-CMD [ "python", "main.py" ]
+RUN python3 pytest
+
