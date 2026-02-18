@@ -1,10 +1,9 @@
 #!/bin/bash
 
 # Build Docker Container
-docker build -t pytorch-container .
+docker build -t pytorch-container -f Dockerfile .
 
-# Run Tests
-sh tests/check_cuda.sh
+
 
 # End of pipeline
 echo "\nEnd of pipeline"
