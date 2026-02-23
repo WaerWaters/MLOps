@@ -3,7 +3,9 @@ FROM python:3.11
 # Install the application dependencies
 COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir dvc dvc-s3
 COPY . .
+RUN dvc pull
 
 # Setup an app user so the container doesn't run as the root user
 RUN useradd -m app
