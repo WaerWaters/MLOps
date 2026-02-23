@@ -5,8 +5,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends python3 python3
 
 # Install the application dependencies
 COPY requirements.txt ./
-RUN python3 -m pip install --no-cache-dir -r requirements.txt
-RUN python3 -m pip install --no-cache-dir dvc dvc-s3
+RUN python3 -m pip install --no-cache-dir --break-system-packages -r requirements.txt
+RUN python3 -m pip install --no-cache-dir --break-system-packages dvc dvc-s3
 COPY . .
 RUN git init && dvc pull --force
 
