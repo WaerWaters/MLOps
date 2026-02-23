@@ -1,12 +1,10 @@
-from data.get_data import Data
+import yaml
+from train_script import train
+from inference_script import inference
+
+with open("experiment_configs/test_config.yaml", "r") as f:
+    config = yaml.safe_load(f)
 
 
-# model = ImageModel()
-# model.describe()
-
-data = Data(path="data/tiny-imagenet")
-
-# data_splits = data.get_train_val_test_sets(splits=[0.7, 0.1, 0.2])
-preprocessed = data.get_preprocessed(data.data["train"][0])
-print(preprocessed["pixel_values"])
-# print(len(data_splits))
+train(config)
+inference(config)
