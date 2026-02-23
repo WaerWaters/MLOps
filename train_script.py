@@ -30,7 +30,7 @@ def train(config):
 
     train_data = splits["train"]
     if config.get("for_testing", False):
-        train_data = train_data.select(range(int(len(train_data) * 0.05)))
+        train_data = train_data.select(range(int(len(train_data) * 0.01)))
 
     train_loader = DataLoader(
         train_data, batch_size=bs, shuffle=True, collate_fn=data.collate_fn

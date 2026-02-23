@@ -24,7 +24,7 @@ def inference(config):
 
     test_data = splits["test"]
     if config.get("for_testing", False):
-        test_data = test_data.select(range(int(len(test_data) * 0.05)))
+        test_data = test_data.select(range(int(len(test_data) * 0.01)))
 
     test_loader = DataLoader(
         test_data, batch_size=bs, shuffle=False, collate_fn=data.collate_fn
