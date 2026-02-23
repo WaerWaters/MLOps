@@ -57,3 +57,5 @@ def inference(config):
     print("\nTest Results:")
     print(f"  Loss:     {avg_loss:.4f}")
     print(f"  Accuracy: {accuracy:.4f} ({correct}/{total})")
+
+    return avg_loss, accuracy
