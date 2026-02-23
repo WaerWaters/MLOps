@@ -1,4 +1,4 @@
-FROM nvidia/cuda:12.4.0-runtime-ubuntu24.04
+FROM nvidia/cuda:12.6.0-runtime-ubuntu24.04
 WORKDIR /app
 
 RUN apt-get update && apt-get install -y --no-install-recommends python3 python3-pip git && rm -rf /var/lib/apt/lists/*
