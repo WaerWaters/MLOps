@@ -22,6 +22,8 @@ elif torch.backends.mps.is_available():
 else:
     device = torch.device("cpu")
 
+print(f"using device: {device}")
+
 data = Data(data_path)
 splits = data.get_train_val_test_sets(data_splits)
 

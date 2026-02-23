@@ -6,8 +6,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # Setup an app user so the container doesn't run as the root user
-RUN useradd app
+RUN useradd -m app
 USER app
 
-RUN python3 pytest
+RUN pytest tests
 
+CMD ["python", "main.py"]

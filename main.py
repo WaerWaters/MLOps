@@ -6,8 +6,7 @@ from data.get_data import Data
 
 data = Data(path="data/tiny-imagenet")
 
-data_splits = data.get_train_val_test_sets(splits=[0.7, 0.1, 0.2])
-# preprocessed = data.get_preprocessed(data.data["train"][0])
-# print(preprocessed["pixel_values"])
-# random addition for jenkins test.
-print(2 + 2)
+# data_splits = data.get_train_val_test_sets(splits=[0.7, 0.1, 0.2])
+preprocessed = data.get_preprocessed(data.data["train"][0])
+print(preprocessed["pixel_values"])
+# print(len(data_splits))
