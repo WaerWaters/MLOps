@@ -5,7 +5,7 @@ IMAGE_NAME="dvml_gruppe1"
 COMMIT_HASH=$(git rev-parse --short HEAD)
 
 # Build Docker Container (tests run during build)
-docker build --network=host -t ${IMAGE_NAME}:${COMMIT_HASH} -f Dockerfile .
+docker build --network=host --build-arg COMMIT_HASH=${COMMIT_HASH} -t ${IMAGE_NAME}:${COMMIT_HASH} -f Dockerfile .
 
 # Tag for registry
 docker tag ${IMAGE_NAME}:${COMMIT_HASH} ${REGISTRY}/${IMAGE_NAME}:${COMMIT_HASH}
