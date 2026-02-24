@@ -1,12 +1,12 @@
-FROM nvidia/cuda:12.6.0-runtime-ubuntu24.04
+FROM pytorch/pytorch:2.2.0-cuda12.1-cudnn8-runtime
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y --no-install-recommends python3 python3-pip git && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y --no-install-recommends git && rm -rf /var/lib/apt/lists/*
 
 # Install the application dependencies
 COPY requirements.txt ./
-RUN python3 -m pip install --no-cache-dir --break-system-packages -r requirements.txt
-RUN python3 -m pip install --no-cache-dir --break-system-packages dvc dvc-s3
+RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir dvc dvc-s3
 COPY . .
 RUN git init && dvc pull --force
 
