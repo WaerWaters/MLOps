@@ -1,0 +1,14 @@
+artifact_uri: /Users/macbook/Desktop/MlOps/MLOps/172.24.198.42:5050/733583907726749045/297a0ffa545d4bb9a61df6738b0c1538/artifacts
+end_time: 1771924225856
+entry_point_name: ''
+experiment_id: '733583907726749045'
+lifecycle_stage: active
+run_id: 297a0ffa545d4bb9a61df6738b0c1538
+run_name: amusing-lamb-917
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1771924187455
+status: 4
+tags: []
+user_id: macbook

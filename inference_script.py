@@ -2,7 +2,7 @@ import torch
 from torch.utils.data import DataLoader
 from data.get_data import Data
 from models.image_classifier import ImageModel
-
+import mlflow
 
 def inference(config):
     data_path = config["data_path"]
@@ -40,22 +40,25 @@ def inference(config):
     total_loss = 0
     correct = 0
     total = 0
+    with mlflow.start_run(name="inference"):
+        with torch.no_grad():
+            for batch in test_loader:
+                batch = {k: v.to(device) for k, v in batch.items()}
+                outputs = model(**batch)
 
-    with torch.no_grad():
-        for batch in test_loader:
-            batch = {k: v.to(device) for k, v in batch.items()}
-            outputs = model(**batch)
+                total_loss += outputs.loss.item()
+                preds = outputs.logits.argmax(dim=-1)
+                correct += (preds == batch["labels"]).sum().item()
+                total += batch["labels"].size(0)
 
-            total_loss += outputs.loss.item()
-            preds = outputs.logits.argmax(dim=-1)
-            correct += (preds == batch["labels"]).sum().item()
-            total += batch["labels"].size(0)
+        avg_loss = total_loss / len(test_loader)
+        accuracy = correct / total
 
-    avg_loss = total_loss / len(test_loader)
-    accuracy = correct / total
+        mlflow.log("inference-loss", avg_loss)
+        mlflow.log("inference accurracy", accuracy)
 
-    print("\nTest Results:")
-    print(f"  Loss:     {avg_loss:.4f}")
-    print(f"  Accuracy: {accuracy:.4f} ({correct}/{total})")
+        print("\nTest Results:")
+        print(f"  Loss:     {avg_loss:.4f}")
+        print(f"  Accuracy: {accuracy:.4f} ({correct}/{total})")
 
     return avg_loss, accuracy

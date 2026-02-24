@@ -1,0 +1,14 @@
+artifact_uri: /Users/macbook/Desktop/MlOps/MLOps/172.24.198.42:5050/733583907726749045/3e928e6e240043e5aa4964825f11b565/artifacts
+end_time: 1771924380224
+entry_point_name: ''
+experiment_id: '733583907726749045'
+lifecycle_stage: active
+run_id: 3e928e6e240043e5aa4964825f11b565
+run_name: nosy-carp-753
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1771924380214
+status: 3
+tags: []
+user_id: macbook
