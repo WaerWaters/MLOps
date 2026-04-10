@@ -1,13 +1,22 @@
-from data.get_data import Data
+import yaml
+from train_script import train
+from inference_script import inference
+import mlflow
+import sys
+
+# first argument is git hash
+git_hash = sys.argv[1]
+
+with open("experiment_configs/test_config.yaml", "r") as f:
+    config = yaml.safe_load(f)
 
 
-# model = ImageModel()
-# model.describe()
+mlflow_server = "http://172.24.198.42:5050"
+mlflow.set_tracking_uri(mlflow_server)
+mlflow.set_experiment(f"dvml8-git-commit-{git_hash}")
 
-data = Data(path="data/tiny-imagenet")
 
-data_splits = data.get_train_val_test_sets(splits=[0.7, 0.1, 0.2])
-# preprocessed = data.get_preprocessed(data.data["train"][0])
-# print(preprocessed["pixel_values"])
-# random addition for jenkins test.
-print(2 + 2)
+train(config)
+inference(config)
+
+

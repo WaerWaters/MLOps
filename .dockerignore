@@ -1,0 +1,5 @@
+.venv
+.git
+data/tiny-imagenet
+trained_models/*.pt
+__pycache__
