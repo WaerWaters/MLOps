@@ -4,6 +4,7 @@ from data.get_data import Data
 from models.image_classifier import ImageModel
 import mlflow
 
+
 def inference(config):
     data_path = config["data_path"]
     data_splits = [config["train_split"], config["val_split"], config["test_split"]]
@@ -40,7 +41,7 @@ def inference(config):
     total_loss = 0
     correct = 0
     total = 0
-    with mlflow.start_run(name="inference"):
+    with mlflow.start_run(run_name="inference"):
         with torch.no_grad():
             for batch in test_loader:
                 batch = {k: v.to(device) for k, v in batch.items()}
@@ -54,8 +55,8 @@ def inference(config):
         avg_loss = total_loss / len(test_loader)
         accuracy = correct / total
 
-        mlflow.log("inference-loss", avg_loss)
-        mlflow.log("inference accurracy", accuracy)
+        mlflow.log_metric("inference-loss", avg_loss)
+        mlflow.log_metric("inference accuracy", accuracy)
 
         print("\nTest Results:")
         print(f"  Loss:     {avg_loss:.4f}")
