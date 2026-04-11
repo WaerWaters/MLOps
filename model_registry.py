@@ -1,36 +1,32 @@
 import mlflow
 
 
-def promote_if_best(model_name, new_version, accuracy):
+def promote_if_best(model_name, new_version, accuracy, git_hash="unknown"):
     client = mlflow.MlflowClient()
 
-    production_versions = client.get_latest_versions(model_name, stages=["Production"])
+    # Tag the new version with the git commit hash for traceability
+    client.set_model_version_tag(model_name, new_version, "git_commit", git_hash)
 
-    if not production_versions:
-        client.transition_model_version_stage(
-            name=model_name, version=new_version, stage="Production"
-        )
-        mlflow.set_tag("deployed", "true")
-        print("No existing production model — new model promoted to Production")
-    else:
-        prod_run = client.get_run(production_versions[0].run_id)
+    # Check if there is a current production model via alias
+    try:
+        production_version = client.get_model_version_by_alias(model_name, "production")
+        prod_run = client.get_run(production_version.run_id)
         prod_accuracy = prod_run.data.metrics["inference accuracy"]
 
         if accuracy > prod_accuracy:
-            client.transition_model_version_stage(
-                name=model_name,
-                version=production_versions[0].version,
-                stage="Archived",
-            )
-            client.transition_model_version_stage(
-                name=model_name, version=new_version, stage="Production"
-            )
+            client.set_registered_model_alias(model_name, "production", new_version)
             mlflow.set_tag("deployed", "true")
             print(
-                f"New model outperforms production ({accuracy:.4f} > {prod_accuracy:.4f}) — promoted to Production"
+                f"New model outperforms production ({accuracy:.4f} > {prod_accuracy:.4f}) — promoted to production"
             )
         else:
             mlflow.set_tag("deployed", "false")
             print(
                 f"New model does not outperform production ({accuracy:.4f} <= {prod_accuracy:.4f}) — not promoted"
             )
+
+    except mlflow.exceptions.MlflowException:
+        # No production alias exists yet, promote directly
+        client.set_registered_model_alias(model_name, "production", new_version)
+        mlflow.set_tag("deployed", "true")
+        print("No existing production model — new model promoted to production")

@@ -79,7 +79,7 @@ def inference(config, git_hash="unknown"):
                 .get_latest_versions("dvml_gruppe1", stages=["None"])[0]
                 .version
             )
-            promote_if_best("dvml_gruppe1", new_version, accuracy)
+            promote_if_best("dvml_gruppe1", new_version, accuracy, git_hash)
             print(
                 f"Model registered to MLflow registry (accuracy{accuracy:.4f} threshold: {performance_criteria})"
             )

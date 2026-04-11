@@ -17,6 +17,6 @@ docker push ${REGISTRY}/${IMAGE_NAME}:${COMMIT_HASH}
 docker push ${REGISTRY}/${IMAGE_NAME}:latest
 
 # Run Docker Container
-docker run --gpus all ${IMAGE_NAME}:${COMMIT_HASH}
+docker run --gpus all -e BUILD_NUMBER=${BUILD_NUMBER} ${IMAGE_NAME}:${COMMIT_HASH}
 
 echo "\nEnd of pipeline"
