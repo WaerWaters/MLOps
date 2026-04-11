@@ -5,7 +5,7 @@ from models.image_classifier import ImageModel
 import mlflow
 
 
-def inference(config):
+def inference(config, git_hash="unknown"):
     data_path = config["data_path"]
     data_splits = [config["train_split"], config["val_split"], config["test_split"]]
     bs = config["batch_size"]
@@ -41,7 +41,8 @@ def inference(config):
     total_loss = 0
     correct = 0
     total = 0
-    with mlflow.start_run(run_name="inference"):
+    with mlflow.start_run(run_name=f"{git_hash}-inference"):
+        mlflow.set_tag("git_commit", git_hash)
         with torch.no_grad():
             for batch in test_loader:
                 batch = {k: v.to(device) for k, v in batch.items()}

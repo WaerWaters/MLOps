@@ -5,7 +5,7 @@ from models.image_classifier import ImageModel
 import mlflow
 
 
-def train(config):
+def train(config, git_hash="unknown"):
     data_path = config["data_path"]
     data_splits = [config["train_split"], config["val_split"], config["test_split"]]
     lr = config["learning_rate"]
@@ -14,7 +14,8 @@ def train(config):
     epochs = config["num_epochs"]
     save_path = config["save_path"]
 
-    with mlflow.start_run(run_name="Train"):
+    with mlflow.start_run(run_name=f"{git_hash}-train"):
+        mlflow.set_tag("git_commit", git_hash)
         # log params for mlflow run
         mlflow.log_params(config)
         if torch.cuda.is_available():

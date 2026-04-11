@@ -13,10 +13,8 @@ with open("experiment_configs/test_config.yaml", "r") as f:
 
 mlflow_server = "http://172.24.198.42:5050"
 mlflow.set_tracking_uri(mlflow_server)
-mlflow.set_experiment(f"dvml8-git-commit-{git_hash}")
+mlflow.set_experiment("dvml8_gruppe1")
 
 
-train(config)
-inference(config)
-
-
+train(config, git_hash)
+inference(config, git_hash)
