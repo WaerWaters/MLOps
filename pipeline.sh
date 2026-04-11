@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 REGISTRY="172.24.198.42:5000"
 IMAGE_NAME="dvml_gruppe1"
