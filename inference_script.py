@@ -66,6 +66,8 @@ def inference(config, git_hash="unknown"):
         mlflow.log_metric("inference-loss", avg_loss)
         mlflow.log_metric("inference accuracy", accuracy)
 
+        mlflow.log_artifact("model_card.md")
+
         performance_criteria = 0.0001
         if accuracy > performance_criteria:
             mlflow.pytorch.log_model(
