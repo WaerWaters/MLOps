@@ -1,8 +1,10 @@
+import os
 import torch
 from torch.utils.data import DataLoader
 from data.get_data import Data
 from models.image_classifier import ImageModel
 import mlflow
+from model_registry import promote_if_best
 
 
 def inference(config, git_hash="unknown"):
@@ -43,6 +45,11 @@ def inference(config, git_hash="unknown"):
     total = 0
     with mlflow.start_run(run_name=f"{git_hash}-inference"):
         mlflow.set_tag("git_commit", git_hash)
+        mlflow.set_tag(
+            "jenkins_build_number", os.environ.get("BUILD_NUMBER", "unknown")
+        )
+        mlflow.set_tag("docker_image", f"dvml_gruppe1:{git_hash}")
+        mlflow.log_param("data_minio_version", "3500cb7f2b0b1b58ab0c70345cf40596.dir")
         with torch.no_grad():
             for batch in test_loader:
                 batch = {k: v.to(device) for k, v in batch.items()}
@@ -67,6 +74,12 @@ def inference(config, git_hash="unknown"):
                 registered_model_name="dvml_gruppe1",
             )
             mlflow.set_tag("model_registered", "true")
+            new_version = (
+                mlflow.MlflowClient()
+                .get_latest_versions("dvml_gruppe1", stages=["None"])[0]
+                .version
+            )
+            promote_if_best("dvml_gruppe1", new_version, accuracy)
             print(
                 f"Model registered to MLflow registry (accuracy{accuracy:.4f} threshold: {performance_criteria})"
             )

@@ -1,3 +1,4 @@
+import os
 import torch
 from torch.utils.data import DataLoader
 from data.get_data import Data
@@ -16,6 +17,10 @@ def train(config, git_hash="unknown"):
 
     with mlflow.start_run(run_name=f"{git_hash}-train"):
         mlflow.set_tag("git_commit", git_hash)
+        mlflow.set_tag(
+            "jenkins_build_number", os.environ.get("BUILD_NUMBER", "unknown")
+        )
+        mlflow.set_tag("docker_image", f"dvml_gruppe1:{git_hash}")
         # log params for mlflow run
         mlflow.log_params(config)
         if torch.cuda.is_available():
