@@ -56,6 +56,18 @@ def inference(config, git_hash="unknown"):
         avg_loss = total_loss / len(test_loader)
         accuracy = correct / total
 
+        if accuracy > 0.01:
+            mlflow.pytorch.log_model(
+                pytorch_model=model,
+                artifact_path="model",
+                registered_model_name="dvml_gruppe1",
+            )
+            mlflow.set_tag("model_registered", "true")
+            print(f"Model registered to MLflow registry (accuraccy{accuracy:.4f})")
+        else:
+            mlflow.set_tag("model_registered", "false")
+            print(f"Model did not meet performance criteria (accuraccy{accuracy:.4f})")
+
         mlflow.log_metric("inference-loss", avg_loss)
         mlflow.log_metric("inference accuracy", accuracy)
 
