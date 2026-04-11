@@ -19,4 +19,4 @@ RUN pytest tests
 ARG COMMIT_HASH=unknown
 ENV COMMIT_HASH=${COMMIT_HASH}
 
-CMD "python3", "main.py", "${COMMIT_HASH}"
+CMD python3 main.py ${COMMIT_HASH}
