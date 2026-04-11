@@ -4,6 +4,7 @@ from data.get_data import Data
 from models.image_classifier import ImageModel
 import mlflow
 
+
 def train(config):
     data_path = config["data_path"]
     data_splits = [config["train_split"], config["val_split"], config["test_split"]]
@@ -13,10 +14,9 @@ def train(config):
     epochs = config["num_epochs"]
     save_path = config["save_path"]
 
-    
     with mlflow.start_run(run_name="Train"):
-        #log params for mlflow run
-        mlflow.log_params(config) 
+        # log params for mlflow run
+        mlflow.log_params(config)
         if torch.cuda.is_available():
             device = torch.device("cuda")
         elif torch.backends.mps.is_available():
@@ -49,14 +49,12 @@ def train(config):
                 loss = outputs.loss
 
                 # log the loss of current batch in epoch
-                mlflow.log("train_loss", loss)
-
+                mlflow.log_metric("train_loss", loss.item())
 
                 optimizer.zero_grad()
                 loss.backward()
                 optimizer.step()
 
-                
                 print(f"Loss: {loss.item():.4f}")
             # we can enable this to log the model aswell, but implement signature before doing it.
             # mlflow.pytorch.log_model(pytorch_model=model, name = f"checkpoint-epoch-{epoch}", step=epoch)
