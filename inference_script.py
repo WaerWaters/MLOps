@@ -76,9 +76,10 @@ def inference(config, git_hash="unknown"):
                 registered_model_name="dvml_gruppe1",
             )
             mlflow.set_tag("model_registered", "true")
+            run_id = mlflow.active_run().info.run_id
             new_version = (
                 mlflow.MlflowClient()
-                .get_latest_versions("dvml_gruppe1", stages=["None"])[0]
+                .search_model_versions(f"run_id='{run_id}'")[0]
                 .version
             )
             promote_if_best("dvml_gruppe1", new_version, accuracy, git_hash)

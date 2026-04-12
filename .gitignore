@@ -5,3 +5,6 @@ trained_models/*
 __pycache__/
 data/__pycache__/*
 local_files
+mlruns/
+mlflow.db
+.coverage
