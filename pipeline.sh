@@ -21,9 +21,9 @@ docker run --gpus all -e BUILD_NUMBER=${BUILD_NUMBER} ${IMAGE_NAME}:${COMMIT_HAS
 
 # Merge dev to main on successful pipeline run
 git remote set-url origin "https://${GIT_USER}:${GIT_PASS}@github.com/WaerWaters/MLOps.git"
+git fetch origin
 git checkout main
-git merge dev --ff-only
+git merge origin/dev --ff-only
 git push origin main
-git checkout dev
 
 echo "\nEnd of pipeline"
