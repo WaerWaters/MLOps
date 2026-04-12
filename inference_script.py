@@ -1,4 +1,5 @@
 import os
+import yaml
 import torch
 from torch.utils.data import DataLoader
 from data.get_data import Data
@@ -49,7 +50,10 @@ def inference(config, git_hash="unknown"):
             "jenkins_build_number", os.environ.get("BUILD_NUMBER", "unknown")
         )
         mlflow.set_tag("docker_image", f"dvml_gruppe1:{git_hash}")
-        mlflow.log_param("data_minio_version", "3500cb7f2b0b1b58ab0c70345cf40596.dir")
+        with open("data/tiny-imagenet.dvc") as f:
+            dvc_meta = yaml.safe_load(f)
+        data_version = dvc_meta["outs"][0]["md5"]
+        mlflow.log_param("data_minio_version", data_version)
         with torch.no_grad():
             for batch in test_loader:
                 batch = {k: v.to(device) for k, v in batch.items()}

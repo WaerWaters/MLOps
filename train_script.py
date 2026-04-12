@@ -69,4 +69,5 @@ def train(config, git_hash="unknown"):
         mlflow.log_metric("training_duration_seconds", training_duration)
         print(f"Training duration: {training_duration:.2f}s")
 
+        os.makedirs(os.path.dirname(save_path), exist_ok=True)
         torch.save(model.state_dict(), save_path)
