@@ -72,7 +72,7 @@ def inference(config, git_hash="unknown"):
         if accuracy > performance_criteria:
             mlflow.pytorch.log_model(
                 pytorch_model=model,
-                artifact_path="model",
+                artifact_path=f"model-{git_hash}",
                 registered_model_name="dvml_gruppe1",
             )
             mlflow.set_tag("model_registered", "true")

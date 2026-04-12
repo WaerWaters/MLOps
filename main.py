@@ -1,6 +1,4 @@
 import yaml
-from train_script import train
-from inference_script import inference
 import mlflow
 import sys
 
@@ -16,5 +14,8 @@ mlflow.set_tracking_uri(mlflow_server)
 mlflow.set_experiment("dvml8_gruppe1")
 
 
-train(config, git_hash)
-inference(config, git_hash)
+# train(config, git_hash)
+# inference(config, git_hash)
+
+client = mlflow.MlflowClient()
+client.transition_model_version_stage("dvml_gruppe1", "2", stage="None")
