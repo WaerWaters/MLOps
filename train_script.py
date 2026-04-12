@@ -1,4 +1,5 @@
 import os
+import time
 import torch
 from torch.utils.data import DataLoader
 from data.get_data import Data
@@ -47,6 +48,7 @@ def train(config, git_hash="unknown"):
         )
 
         model.train()
+        train_start = time.time()
         for epoch in range(epochs):
             for batch in train_loader:
                 batch = {k: v.to(device) for k, v in batch.items()}
@@ -62,7 +64,9 @@ def train(config, git_hash="unknown"):
                 optimizer.step()
 
                 print(f"Loss: {loss.item():.4f}")
-            # we can enable this to log the model aswell, but implement signature before doing it.
-            # mlflow.pytorch.log_model(pytorch_model=model, name = f"checkpoint-epoch-{epoch}", step=epoch)
+
+        training_duration = time.time() - train_start
+        mlflow.log_metric("training_duration_seconds", training_duration)
+        print(f"Training duration: {training_duration:.2f}s")
 
         torch.save(model.state_dict(), save_path)
