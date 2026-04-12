@@ -8,7 +8,7 @@ test_split: 0.30
 learning_rate: 0.0005
 weight_decay: 0.01
 batch_size: 128
-num_epochs: 1
+num_epochs: 5
 
 # Output
 save_path: "trained_models/test_model.pt"
