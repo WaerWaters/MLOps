@@ -1,0 +1,23 @@
+git commit hash
+    Embedded in MLflow run name, model version tag and docker image tag.
+
+Data version
+    data_minio_version logged as MLflow param.
+
+Hyperparameters
+    logged in MLflow
+
+Training metrics
+    train_loss logged to MLflow
+
+Inference metrics
+    inference_accuracy, inference_loss logged to MLflow
+
+Jenkins build
+    jenkins_build_number as MLflow tag
+
+Model card
+    uploaded as artifact to MLflow
+
+Model registry
+    each version tagged with git_commit, production alias tracks best model

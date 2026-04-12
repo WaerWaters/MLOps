@@ -1,0 +1,36 @@
+1. Pre-commit hooks
+    Runs automatically on every git commit.
+    Ensures a common style across the repository, so that unnecessary merge conflicts are avoided due to personal coding styles and prefferences.
+        - trailing-whitespace, end-of-file-fixer, check-yaml
+        - ruff, ruff-format
+
+2. Jenkis trigger
+    Jenkins listens in on the dev branch, whenever it detects an update it runs pipeline.sh.
+    On successfull pipeline excecution the dev branch is merged into main, no individual is allowed to push to main directly.
+    No "works on my machine" bs.
+
+3. Docker build
+    Installs dependencies from requirements.txt, pulls data from dvc and runs tests as a build step. If the tests fail an image is not created.
+        - tests correct data behaviour
+        - tests correct model behaviour
+
+4. Tag & push to registry
+    The image is tagged with the commit hash and is pushed to the registry.
+    Every image can be traced back, and any enviroment can be reproduced.
+
+5. Training
+    Runs inside the container. Trains MobileNetV2 from scratch on Tiny ImageNet.
+    Produces the model weights and logs to MLflow.
+
+6. Inference
+    Loads the saved weights and evaluates on the test split.
+    Logs accuracy and loss to MLflow, uploads model_card.md as an artifact.
+
+7. Model registration & promotion
+    If the model is good enough it is registred to the model registry in MLflow.
+    If it also is better than the current best model (the one tagged with the production alias), then it gets the production alias.
+    As such we always know which model is the best performing one and should be used in production.
+
+8. Merge to main
+    When the pipeline succeeds Jenkins merges the dev branch into main.
+    Main thus always reflects working and trustable code that has passed through the full pipeline.
