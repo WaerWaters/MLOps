@@ -19,4 +19,11 @@ docker push ${REGISTRY}/${IMAGE_NAME}:latest
 # Run Docker Container
 docker run --gpus all -e BUILD_NUMBER=${BUILD_NUMBER} ${IMAGE_NAME}:${COMMIT_HASH}
 
+# Merge dev to main on successful pipeline run
+REPO_URL=$(git remote get-url origin | sed 's|https://|https://'"${GIT_USER}"':'"${GIT_PASS}"'@|')
+git checkout main
+git merge dev --ff-only
+git push "${REPO_URL}" main
+git checkout dev
+
 echo "\nEnd of pipeline"
