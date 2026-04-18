@@ -1,0 +1,37 @@
+Bare lige en husker:
+    Amdahls: Hvor meget hurtigere kan vi klare samme opgave.
+        SpeedUp(P, N) = 1 / ((1 - P) + (P / N))
+
+        P = parallelizable fraction (e.g. 0.90 for 90%)
+        N = number of GPUs
+        Max speedup as N -> infinity: 1 / (1 - P)
+
+    Gustaffsons: Hvor meget større en opgave kan vi klare på samme tid.
+        S(N) = N - a * (N - 1)
+
+        a = sequential fraction (e.g. 0.05 for 5%)
+        N = number of GPUs
+
+I vores eksperiment er 'opgaven' at træne modellen på det fulde datasæt i en enkel epoch.
+
+For one epoch:
+    Total training time: 258.63s
+    Parallel time (fwd + bwd): 162.52s
+    Sequential time (overhead): 5.50s
+    Sequential fraction (s): 0.0213
+
+Amdahl's Law (fixed problem size):
+    Max speedup (inf N): 47.03x
+
+Gustaffsons Law:
+    Speedup with  2 GPUs: 1.98x
+    Speedup with  4 GPUs: 3.94x
+    Speedup with  8 GPUs: 7.85x
+    Speedup with 16 GPUs: 15.68x
+    Speedup with 32 GPUs: 31.34x
+    Speedup with 64 GPUs: 62.66x
+    Speedup with 128 GPUs: 125.30x
+    Speedup with 256 GPUs: 250.58x
+    Speedup with 512 GPUs: 501.14x
+    Speedup with 1024 GPUs: 1002.25x
+    Speedup with 2048 GPUs: 2004.48x
