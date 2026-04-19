@@ -1,0 +1,88 @@
+Det her er lavet er chatten - har fået den til at pensle det ud så man nemt kan huske.
+Tallene er gode nok.
+Lossen og training time er taget fra en model der er trænet i 5 epochs kun.
+
+==========================================================
+SCALING LAW ANALYSIS - D3.2
+==========================================================
+
+CURRENT MODEL SPECS
+-------------------
+Training time:      1,303 seconds
+Training samples:   77,000
+Test samples:       33,000
+Total parameters:   2,480,072
+Current test loss:  3.0351
+
+
+==========================================================
+SCALING LAWS (Kaplan et al. / Henighan et al. 2020)
+==========================================================
+
+General form:
+
+  L(X) = (X_c / X) ^ alpha_X
+
+Where:
+  L     = test loss
+  X     = the variable being scaled (compute, data, or parameters)
+  X_c   = a constant (fitted from experiments)
+  alpha = the scaling exponent
+
+Exponents (from LLM research, used as approximation):
+  alpha_C = 0.05   (compute)
+  alpha_D = 0.095  (dataset size)
+  alpha_N = 0.076  (parameters)
+
+
+To find the multiplier needed to halve the loss:
+
+  L_new / L_current = 0.5
+  0.5 = (X_current / X_new) ^ alpha
+  X_new / X_current = 2 ^ (1 / alpha)
+
+
+==========================================================
+RESULTS: MULTIPLIERS NEEDED TO HALVE TEST LOSS
+==========================================================
+
+COMPUTE
+-------
+  Formula:    multiplier = 2 ^ (1 / 0.05) = 2 ^ 20
+  Multiplier: 1,048,576x
+  Current:    1,303 seconds
+  Required:   1,303 * 1,048,576 = ~1,366,294,528 seconds
+              = ~43.3 years of continuous training
+
+DATA (training samples)
+-----------------------
+  Formula:    multiplier = 2 ^ (1 / 0.095) = 2 ^ 10.53
+  Multiplier: ~1,477x
+  Current:    77,000 samples
+  Required:   77,000 * 1,477 = ~113,729,000 samples
+              = ~113.7 million training samples
+
+PARAMETERS
+----------
+  Formula:    multiplier = 2 ^ (1 / 0.076) = 2 ^ 13.16
+  Multiplier: ~9,170x
+  Current:    2,480,072 parameters
+  Required:   2,480,072 * 9,170 = ~22,742,260,240 parameters
+              = ~22.7 billion parameters
+
+
+==========================================================
+KEY TAKEAWAY
+==========================================================
+The small exponents mean halving the loss requires
+enormous scaling in any single dimension. This is the
+diminishing returns property of the power law.
+
+In practice, optimal performance requires scaling all
+three factors (compute, data, parameters) in tandem,
+not just one in isolation.
+
+NOTE: These exponents were derived for LLMs. Your
+actual model may scale differently, but the general
+trend of diminishing returns holds across architectures.
+==========================================================
