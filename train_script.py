@@ -48,6 +48,9 @@ def train(config, git_hash="unknown"):
         )
 
         model.train()
+        if device.type == "cuda":
+            torch.cuda.reset_peak_memory_stats(device)
+
         train_start = time.time()
         for epoch in range(epochs):
             for batch in train_loader:
@@ -68,6 +71,11 @@ def train(config, git_hash="unknown"):
         training_duration = time.time() - train_start
         mlflow.log_metric("training_duration_seconds", training_duration)
         print(f"Training duration: {training_duration:.2f}s")
+
+        if device.type == "cuda":
+            peak_vram = torch.cuda.max_memory_allocated(device) / 1024**2
+            mlflow.log_metric("peak_vram_mb", peak_vram)
+            print(f"Peak VRAM usage:  {peak_vram:.1f} MB")
 
         os.makedirs(os.path.dirname(save_path), exist_ok=True)
         torch.save(model.state_dict(), save_path)
