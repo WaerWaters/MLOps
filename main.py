@@ -1,5 +1,5 @@
 import yaml
-from train_script import train
+from train_script_amp import train
 from inference_script import inference
 import mlflow
 import sys
