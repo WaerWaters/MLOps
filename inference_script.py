@@ -1,4 +1,5 @@
 import os
+import time
 import yaml
 import torch
 from torch.utils.data import DataLoader
@@ -54,6 +55,7 @@ def inference(config, git_hash="unknown"):
             dvc_meta = yaml.safe_load(f)
         data_version = dvc_meta["outs"][0]["md5"]
         mlflow.log_param("data_minio_version", data_version)
+        inference_start = time.time()
         with torch.no_grad():
             for batch in test_loader:
                 batch = {k: v.to(device) for k, v in batch.items()}
@@ -63,12 +65,14 @@ def inference(config, git_hash="unknown"):
                 preds = outputs.logits.argmax(dim=-1)
                 correct += (preds == batch["labels"]).sum().item()
                 total += batch["labels"].size(0)
+        inference_duration = time.time() - inference_start
 
         avg_loss = total_loss / len(test_loader)
         accuracy = correct / total
 
         mlflow.log_metric("inference-loss", avg_loss)
         mlflow.log_metric("inference accuracy", accuracy)
+        mlflow.log_metric("inference_duration_seconds", inference_duration)
 
         mlflow.log_artifact("model_card.md")
 
