@@ -1,8 +1,9 @@
 import yaml
-from train_script_amp import train
-from inference_script import inference
 
-# from quantize import quantize
+# from train_script_amp import train
+# from inference_script import inference
+from quantize import quantize
+
 import mlflow
 import sys
 
@@ -18,6 +19,6 @@ mlflow.set_tracking_uri(mlflow_server)
 mlflow.set_experiment("dvml8_gruppe1")
 
 
-train(config, git_hash)
-inference(config, git_hash)
-# quantize(config)
+# train(config, git_hash)
+# inference(config, git_hash)
+quantize(config)
