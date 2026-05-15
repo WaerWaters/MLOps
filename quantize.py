@@ -1,38 +1,87 @@
 import os
-import copy
 import time
 import torch
 import mlflow
+import numpy as np
+import onnxruntime as ort
+from onnxruntime.quantization import (
+    quantize_static,
+    CalibrationDataReader,
+    QuantType,
+    QuantFormat,
+)
 from torch.utils.data import DataLoader
 from data.get_data import Data
 
 MODEL_NAME = "dvml_gruppe1"
 ALIAS = "production"
+ONNX_FP32_PATH = "/tmp/model_fp32.onnx"
+ONNX_INT8_PATH = "/tmp/model_int8.onnx"
 
 
-def get_size_mb(model):
-    path = "/tmp/model_size_check.pth"
-    torch.save(model.state_dict(), path)
-    size = os.path.getsize(path) / 1024**2
-    os.remove(path)
-    return size
+class _LogitsWrapper(torch.nn.Module):
+    def __init__(self, model):
+        super().__init__()
+        self.model = model
+
+    def forward(self, pixel_values):
+        return self.model(pixel_values).logits
 
 
-def run_inference(model, test_loader):
+def export_to_onnx(model, path):
+    wrapper = _LogitsWrapper(model).eval()
+    dummy_input = torch.randn(1, 3, 224, 224)
+    torch.onnx.export(
+        wrapper,
+        (dummy_input,),
+        path,
+        input_names=["pixel_values"],
+        output_names=["logits"],
+        dynamic_axes={"pixel_values": {0: "batch_size"}, "logits": {0: "batch_size"}},
+        opset_version=14,
+        dynamo=False,
+    )
+    print(f"Exported ONNX model to {path}")
+
+
+class _CalibReader(CalibrationDataReader):
+    def __init__(self, data_loader):
+        self.data = [
+            {"pixel_values": batch["pixel_values"].numpy().astype(np.float32)}
+            for batch in data_loader
+        ]
+        self.idx = 0
+
+    def get_next(self):
+        if self.idx >= len(self.data):
+            return None
+        item = self.data[self.idx]
+        self.idx += 1
+        return item
+
+
+def get_size_mb(path):
+    return os.path.getsize(path) / 1024**2
+
+
+def run_onnx_inference(session, test_loader):
     loss_fn = torch.nn.CrossEntropyLoss()
     total_loss = 0
     correct = 0
     total = 0
 
-    model.eval()
     start = time.time()
-    with torch.no_grad():
-        for batch in test_loader:
-            outputs = model(**batch)
-            total_loss += loss_fn(outputs.logits, batch["labels"]).item()
-            preds = outputs.logits.argmax(dim=-1)
-            correct += (preds == batch["labels"]).sum().item()
-            total += batch["labels"].size(0)
+    for batch in test_loader:
+        pixel_values = batch["pixel_values"].numpy().astype(np.float32)
+        labels = batch["labels"]
+
+        logits = session.run(["logits"], {"pixel_values": pixel_values})[0]
+        logits_tensor = torch.tensor(logits)
+
+        total_loss += loss_fn(logits_tensor, labels).item()
+        preds = logits_tensor.argmax(dim=-1)
+        correct += (preds == labels).sum().item()
+        total += labels.size(0)
     duration = time.time() - start
 
     return total_loss / len(test_loader), correct / total, duration
@@ -60,13 +109,29 @@ def quantize(config):
         f"models:/{MODEL_NAME}@{ALIAS}", map_location="cpu"
     )
     model.eval()
-    fp32_size = get_size_mb(model)
+
+    print("Exporting to ONNX...")
+    export_to_onnx(model, ONNX_FP32_PATH)
+    fp32_size = get_size_mb(ONNX_FP32_PATH)
+
+    print("Quantizing to INT8 (static)...")
+    quantize_static(
+        ONNX_FP32_PATH,
+        ONNX_INT8_PATH,
+        calibration_data_reader=_CalibReader(test_loader),
+        weight_type=QuantType.QInt8,
+        quant_format=QuantFormat.QOperator,
+    )
+    int8_size = get_size_mb(ONNX_INT8_PATH)
 
     print("Running FP32 inference...")
-    fp32_loss, fp32_accuracy, fp32_duration = run_inference(model, test_loader)
+    fp32_session = ort.InferenceSession(ONNX_FP32_PATH)
+    fp32_loss, fp32_accuracy, fp32_duration = run_onnx_inference(
+        fp32_session, test_loader
+    )
 
-    with mlflow.start_run(run_name="quantized-fp32-inference"):
-        mlflow.set_tag("quantization", "fp32")
+    with mlflow.start_run(run_name="quantized-fp32-onnx-inference"):
+        mlflow.set_tag("quantization", "fp32_onnx")
         mlflow.set_tag("source_model", f"{MODEL_NAME}@{ALIAS}")
         mlflow.log_metric("inference_accuracy", fp32_accuracy)
         mlflow.log_metric("inference_loss", fp32_loss)
@@ -77,25 +142,14 @@ def quantize(config):
         f"FP32 — accuracy: {fp32_accuracy:.4f}, duration: {fp32_duration:.2f}s, size: {fp32_size:.2f} MB"
     )
 
-    print("Preparing model for static quantization...")
-    model_int8 = copy.deepcopy(model)
-    model_int8.qconfig = torch.quantization.get_default_qconfig("fbgemm")
-    torch.quantization.prepare(model_int8, inplace=True)
-
-    print("Calibrating...")
-    model_int8.eval()
-    with torch.no_grad():
-        for batch in test_loader:
-            model_int8(**batch)
-
-    torch.quantization.convert(model_int8, inplace=True)
-    int8_size = get_size_mb(model_int8)
-
     print("Running INT8 inference...")
-    int8_loss, int8_accuracy, int8_duration = run_inference(model_int8, test_loader)
+    int8_session = ort.InferenceSession(ONNX_INT8_PATH)
+    int8_loss, int8_accuracy, int8_duration = run_onnx_inference(
+        int8_session, test_loader
+    )
 
-    with mlflow.start_run(run_name="quantized-int8-inference"):
-        mlflow.set_tag("quantization", "static_int8_pytorch")
+    with mlflow.start_run(run_name="quantized-int8-onnx-inference"):
+        mlflow.set_tag("quantization", "static_int8_onnx")
         mlflow.set_tag("source_model", f"{MODEL_NAME}@{ALIAS}")
         mlflow.log_metric("inference_accuracy", int8_accuracy)
         mlflow.log_metric("inference_loss", int8_loss)

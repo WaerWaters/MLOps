@@ -2,9 +2,9 @@ import yaml
 
 # from train_script import train
 # from inference_script import inference
-from quantize import quantize
+# from quantize import quantize
 
-# from batch_benchmark import batch_benchmark
+from batch_benchmark import batch_benchmark
 import mlflow
 import sys
 
@@ -22,5 +22,5 @@ mlflow.set_experiment("dvml8_gruppe1")
 
 # train(config, git_hash)
 # inference(config, git_hash)
-quantize(config)
-# batch_benchmark(config)
+# quantize(config)
+batch_benchmark(config)

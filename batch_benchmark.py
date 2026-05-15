@@ -64,6 +64,8 @@ def batch_benchmark(config):
         [config["train_split"], config["val_split"], config["test_split"]]
     )
     test_dataset = splits["test"]
+    if config.get("for_testing", False):
+        test_dataset = test_dataset.select(range(min(1000, len(test_dataset))))
 
     print("Loading production model from MLflow...")
     model = mlflow.pytorch.load_model(

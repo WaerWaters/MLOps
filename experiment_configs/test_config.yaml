@@ -7,11 +7,11 @@ test_split: 0.30
 # Training
 learning_rate: 0.0005
 weight_decay: 0.01
-batch_size: 512
+batch_size: 128
 num_epochs: 1
 
 # Output
 save_path: "trained_models/test_model.pt"
 
 # Testing: setting to True will use 1% of the data for quick run-through.
-for_testing: True
+for_testing: False

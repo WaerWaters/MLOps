@@ -1,0 +1,15 @@
+Vi kører static quantization
+
+pytorch understøttede ikke INT8 conv kernels, derfor bliver modellen først exporteret til ONNX format (samme som vi gjorde med mobil-telefonen dengang).
+
+ONNX har så INT8 kernels til inferens.
+
+Vi ser at modellen bliver ca 4x mindre som forventet når vi går fra FP32 til INT8
+
+Dog ser vi kun ca. 2% hastigheds increase.
+
+I starten tænkte jeg at CPU'en som workeren har måske ikke har en optimeret regelsæt til INT8 opperationer, men har til FP32. Dette er ikke tilfældet, den har regelsæt for begge og bør så behandle INT8 hurtigere (vel 4x hurtigere teoretisk).
+
+https://www.intel.com/content/www/us/en/products/sku/241060/intel-core-ultra-9-processor-285k-36m-cache-up-to-5-70-ghz/specifications.html
+
+Jeg gider ikke læse for meget ind i hvad dette kunne være. ONNX har sikkert heller ikke optimerede INT8 kernels til inferns - men bare kernels der virker idk.
