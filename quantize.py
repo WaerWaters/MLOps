@@ -4,7 +4,12 @@ import torch
 import mlflow
 import numpy as np
 import onnxruntime as ort
-from onnxruntime.quantization import quantize_static, CalibrationDataReader, QuantType
+from onnxruntime.quantization import (
+    quantize_static,
+    CalibrationDataReader,
+    QuantType,
+    QuantFormat,
+)
 from onnxruntime.quantization.shape_inference import quant_pre_process
 from torch.utils.data import DataLoader
 from data.get_data import Data
@@ -121,6 +126,7 @@ def quantize(config):
         ONNX_INT8_PATH,
         calibration_data_reader=_CalibReader(test_loader),
         weight_type=QuantType.QInt8,
+        quant_format=QuantFormat.QOperator,
     )
     int8_size = get_size_mb(ONNX_INT8_PATH)
 
