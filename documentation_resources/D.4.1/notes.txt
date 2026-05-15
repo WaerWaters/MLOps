@@ -12,4 +12,4 @@ I starten tænkte jeg at CPU'en som workeren har måske ikke har en optimeret re
 
 https://www.intel.com/content/www/us/en/products/sku/241060/intel-core-ultra-9-processor-285k-36m-cache-up-to-5-70-ghz/specifications.html
 
-Jeg gider ikke læse for meget ind i hvad dette kunne være. ONNX har sikkert heller ikke optimerede INT8 kernels til inferns - men bare kernels der virker idk.
+Jeg gider ikke læse for meget ind i hvad dette kunne være. ONNX har sikkert heller ikke optimerede INT8 kernels til inferns - men bare kernels der virker, idk.

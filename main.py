@@ -4,7 +4,8 @@ import yaml
 # from inference_script import inference
 # from quantize import quantize
 
-from batch_benchmark import batch_benchmark
+# from batch_benchmark import batch_benchmark
+from pruning import pruning_experiment
 import mlflow
 import sys
 
@@ -23,4 +24,5 @@ mlflow.set_experiment("dvml8_gruppe1")
 # train(config, git_hash)
 # inference(config, git_hash)
 # quantize(config)
-batch_benchmark(config)
+# batch_benchmark(config)
+pruning_experiment(config)
