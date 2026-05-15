@@ -4,13 +4,15 @@ import torch
 import mlflow
 import numpy as np
 import onnxruntime as ort
-from onnxruntime.quantization import quantize_dynamic, QuantType
+from onnxruntime.quantization import quantize_static, CalibrationDataReader, QuantType
+from onnxruntime.quantization.shape_inference import quant_pre_process
 from torch.utils.data import DataLoader
 from data.get_data import Data
 
 MODEL_NAME = "dvml_gruppe1"
 ALIAS = "production"
 ONNX_FP32_PATH = "/tmp/model_fp32.onnx"
+ONNX_FP32_PREP_PATH = "/tmp/model_fp32_prep.onnx"
 ONNX_INT8_PATH = "/tmp/model_int8.onnx"
 
 
@@ -37,6 +39,22 @@ def export_to_onnx(model, path):
         dynamo=False,
     )
     print(f"Exported ONNX model to {path}")
+
+
+class _CalibReader(CalibrationDataReader):
+    def __init__(self, data_loader):
+        self.data = [
+            {"pixel_values": batch["pixel_values"].numpy().astype(np.float32)}
+            for batch in data_loader
+        ]
+        self.idx = 0
+
+    def get_next(self):
+        if self.idx >= len(self.data):
+            return None
+        item = self.data[self.idx]
+        self.idx += 1
+        return item
 
 
 def get_size_mb(path):
@@ -95,9 +113,15 @@ def quantize(config):
     export_to_onnx(model, ONNX_FP32_PATH)
     fp32_size = get_size_mb(ONNX_FP32_PATH)
 
-    # 3. Quantize to INT8 using ONNX Runtime
-    print("Quantizing to INT8...")
-    quantize_dynamic(ONNX_FP32_PATH, ONNX_INT8_PATH, weight_type=QuantType.QInt8)
+    # 3. Quantize to INT8 using ONNX Runtime static quantization
+    print("Quantizing to INT8 (static)...")
+    quant_pre_process(ONNX_FP32_PATH, ONNX_FP32_PREP_PATH)
+    quantize_static(
+        ONNX_FP32_PREP_PATH,
+        ONNX_INT8_PATH,
+        calibration_data_reader=_CalibReader(test_loader),
+        weight_type=QuantType.QInt8,
+    )
     int8_size = get_size_mb(ONNX_INT8_PATH)
 
     # 4. Benchmark FP32 ONNX
