@@ -10,14 +10,12 @@ from onnxruntime.quantization import (
     QuantType,
     QuantFormat,
 )
-from onnxruntime.quantization.shape_inference import quant_pre_process
 from torch.utils.data import DataLoader
 from data.get_data import Data
 
 MODEL_NAME = "dvml_gruppe1"
 ALIAS = "production"
 ONNX_FP32_PATH = "/tmp/model_fp32.onnx"
-ONNX_FP32_PREP_PATH = "/tmp/model_fp32_prep.onnx"
 ONNX_INT8_PATH = "/tmp/model_int8.onnx"
 
 
@@ -120,9 +118,8 @@ def quantize(config):
 
     # 3. Quantize to INT8 using ONNX Runtime static quantization
     print("Quantizing to INT8 (static)...")
-    quant_pre_process(ONNX_FP32_PATH, ONNX_FP32_PREP_PATH)
     quantize_static(
-        ONNX_FP32_PREP_PATH,
+        ONNX_FP32_PATH,
         ONNX_INT8_PATH,
         calibration_data_reader=_CalibReader(test_loader),
         weight_type=QuantType.QInt8,
