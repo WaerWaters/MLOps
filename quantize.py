@@ -24,7 +24,7 @@ class _LogitsWrapper(torch.nn.Module):
 
 
 def export_to_onnx(model, path):
-    wrapper = _LogitsWrapper(model)
+    wrapper = _LogitsWrapper(model).eval()
     dummy_input = torch.randn(1, 3, 224, 224)
     torch.onnx.export(
         wrapper,
@@ -34,6 +34,7 @@ def export_to_onnx(model, path):
         output_names=["logits"],
         dynamic_axes={"pixel_values": {0: "batch_size"}, "logits": {0: "batch_size"}},
         opset_version=14,
+        dynamo=False,
     )
     print(f"Exported ONNX model to {path}")
 
