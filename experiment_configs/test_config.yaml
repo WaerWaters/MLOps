@@ -1,8 +1,8 @@
 # Data
 data_path: "data/tiny-imagenet"
 train_split: 0.7
-val_split: 0.00
-test_split: 0.30
+val_split: 0.10
+test_split: 0.20
 
 # Training
 learning_rate: 0.0005

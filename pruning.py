@@ -1,4 +1,6 @@
 import copy
+import os
+import time
 import torch
 import torch.nn.utils.prune as prune
 import mlflow
@@ -30,6 +32,14 @@ def _apply_pruning(model, amount):
     return model
 
 
+def _get_size_mb(model):
+    path = "/tmp/pruned_model_size.pth"
+    torch.save(model.state_dict(), path)
+    size = os.path.getsize(path) / 1024**2
+    os.remove(path)
+    return size
+
+
 def _run_inference(model, test_loader):
     loss_fn = torch.nn.CrossEntropyLoss()
     total_loss = 0
@@ -37,6 +47,7 @@ def _run_inference(model, test_loader):
     total = 0
 
     model.eval()
+    start = time.time()
     with torch.no_grad():
         for batch in test_loader:
             outputs = model(**batch)
@@ -44,8 +55,9 @@ def _run_inference(model, test_loader):
             preds = outputs.logits.argmax(dim=-1)
             correct += (preds == batch["labels"]).sum().item()
             total += batch["labels"].size(0)
+    duration = time.time() - start
 
-    return total_loss / len(test_loader), correct / total
+    return total_loss / len(test_loader), correct / total, duration
 
 
 def pruning_experiment(config):
@@ -76,16 +88,23 @@ def pruning_experiment(config):
         mlflow.set_tag("pruning_method", "global_unstructured_l1")
         mlflow.set_tag("pruning_scope", "Conv2d+Linear weights")
 
-        print(f"\n{'Pruning %':>10} {'Accuracy':>10} {'Loss':>10}")
-        print("-" * 35)
+        print(
+            f"\n{'Pruning %':>10} {'Accuracy':>10} {'Loss':>10} {'Size (MB)':>12} {'Duration (s)':>14}"
+        )
+        print("-" * 60)
 
         for ratio in PRUNING_RATIOS:
             model = _apply_pruning(copy.deepcopy(base_model), ratio)
-            loss, accuracy = _run_inference(model, test_loader)
+            loss, accuracy, duration = _run_inference(model, test_loader)
+            size_mb = _get_size_mb(model)
 
             pct = int(ratio * 100)
             mlflow.log_metric("accuracy", accuracy, step=pct)
             mlflow.log_metric("loss", loss, step=pct)
             mlflow.log_metric("pruning_ratio", ratio, step=pct)
+            mlflow.log_metric("model_size_mb", size_mb, step=pct)
+            mlflow.log_metric("inference_duration_seconds", duration, step=pct)
 
-            print(f"{pct:>9}% {accuracy:>10.4f} {loss:>10.4f}")
+            print(
+                f"{pct:>9}% {accuracy:>10.4f} {loss:>10.4f} {size_mb:>12.2f} {duration:>14.2f}"
+            )
