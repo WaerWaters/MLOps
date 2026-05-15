@@ -14,11 +14,21 @@ ONNX_FP32_PATH = "/tmp/model_fp32.onnx"
 ONNX_INT8_PATH = "/tmp/model_int8.onnx"
 
 
+class _LogitsWrapper(torch.nn.Module):
+    def __init__(self, model):
+        super().__init__()
+        self.model = model
+
+    def forward(self, pixel_values):
+        return self.model(pixel_values).logits
+
+
 def export_to_onnx(model, path):
+    wrapper = _LogitsWrapper(model)
     dummy_input = torch.randn(1, 3, 224, 224)
     torch.onnx.export(
-        model,
-        {"pixel_values": dummy_input},
+        wrapper,
+        (dummy_input,),
         path,
         input_names=["pixel_values"],
         output_names=["logits"],
@@ -61,8 +71,12 @@ def quantize(config):
         [config["train_split"], config["val_split"], config["test_split"]]
     )
 
+    test_data = splits["test"]
+    if config.get("for_testing", False):
+        test_data = test_data.select(range(int(len(test_data) * 0.01)))
+
     test_loader = DataLoader(
-        splits["test"],
+        test_data,
         batch_size=config["batch_size"],
         shuffle=False,
         collate_fn=data.collate_fn,
