@@ -1,9 +1,8 @@
 import yaml
 
-# from train_script_amp import train
+# from train_script import train
 # from inference_script import inference
 from quantize import quantize
-
 import mlflow
 import sys
 

@@ -2,35 +2,54 @@ import os
 import time
 import torch
 import mlflow
+import numpy as np
+import onnxruntime as ort
+from onnxruntime.quantization import quantize_dynamic, QuantType
 from torch.utils.data import DataLoader
 from data.get_data import Data
 
 MODEL_NAME = "dvml_gruppe1"
 ALIAS = "production"
+ONNX_FP32_PATH = "/tmp/model_fp32.onnx"
+ONNX_INT8_PATH = "/tmp/model_int8.onnx"
 
 
-def get_model_size_mb(model):
-    torch.save(model.state_dict(), "_tmp.pt")
-    size = os.path.getsize("_tmp.pt") / 1024**2
-    os.remove("_tmp.pt")
-    return size
+def export_to_onnx(model, path):
+    dummy_input = torch.randn(1, 3, 224, 224)
+    torch.onnx.export(
+        model,
+        {"pixel_values": dummy_input},
+        path,
+        input_names=["pixel_values"],
+        output_names=["logits"],
+        dynamic_axes={"pixel_values": {0: "batch_size"}, "logits": {0: "batch_size"}},
+        opset_version=14,
+    )
+    print(f"Exported ONNX model to {path}")
 
 
-def run_inference(model, test_loader, device="cpu"):
+def get_size_mb(path):
+    return os.path.getsize(path) / 1024**2
+
+
+def run_onnx_inference(session, test_loader):
+    total_loss_fn = torch.nn.CrossEntropyLoss()
     total_loss = 0
     correct = 0
     total = 0
 
-    model.eval()
     start = time.time()
-    with torch.no_grad():
-        for batch in test_loader:
-            batch = {k: v.to(device) for k, v in batch.items()}
-            outputs = model(**batch)
-            total_loss += outputs.loss.item()
-            preds = outputs.logits.argmax(dim=-1)
-            correct += (preds == batch["labels"]).sum().item()
-            total += batch["labels"].size(0)
+    for batch in test_loader:
+        pixel_values = batch["pixel_values"].numpy().astype(np.float32)
+        labels = batch["labels"]
+
+        logits = session.run(["logits"], {"pixel_values": pixel_values})[0]
+        logits_tensor = torch.tensor(logits)
+
+        total_loss += total_loss_fn(logits_tensor, labels).item()
+        preds = logits_tensor.argmax(dim=-1)
+        correct += (preds == labels).sum().item()
+        total += labels.size(0)
     duration = time.time() - start
 
     return total_loss / len(test_loader), correct / total, duration
@@ -49,21 +68,32 @@ def quantize(config):
         collate_fn=data.collate_fn,
     )
 
-    # Load production model from MLflow
+    # 1. Load production model from MLflow
     print("Loading production model from MLflow...")
-    model_fp32 = mlflow.pytorch.load_model(
+    model = mlflow.pytorch.load_model(
         f"models:/{MODEL_NAME}@{ALIAS}", map_location="cpu"
     )
-    model_fp32.eval()
-    fp32_size = get_model_size_mb(model_fp32)
+    model.eval()
 
-    # --- Baseline: FP32 on CPU ---
-    print("Running FP32 baseline inference on CPU...")
-    fp32_loss, fp32_accuracy, fp32_duration = run_inference(model_fp32, test_loader)
+    # 2. Export to ONNX
+    print("Exporting to ONNX...")
+    export_to_onnx(model, ONNX_FP32_PATH)
+    fp32_size = get_size_mb(ONNX_FP32_PATH)
 
-    with mlflow.start_run(run_name="baseline-fp32-cpu-inference"):
-        mlflow.set_tag("quantization", "none")
-        mlflow.set_tag("device", "cpu")
+    # 3. Quantize to INT8 using ONNX Runtime
+    print("Quantizing to INT8...")
+    quantize_dynamic(ONNX_FP32_PATH, ONNX_INT8_PATH, weight_type=QuantType.QInt8)
+    int8_size = get_size_mb(ONNX_INT8_PATH)
+
+    # 4. Benchmark FP32 ONNX
+    print("Running FP32 ONNX inference...")
+    fp32_session = ort.InferenceSession(ONNX_FP32_PATH)
+    fp32_loss, fp32_accuracy, fp32_duration = run_onnx_inference(
+        fp32_session, test_loader
+    )
+
+    with mlflow.start_run(run_name="quantized-fp32-onnx-inference"):
+        mlflow.set_tag("quantization", "fp32_onnx")
         mlflow.set_tag("source_model", f"{MODEL_NAME}@{ALIAS}")
         mlflow.log_metric("inference_accuracy", fp32_accuracy)
         mlflow.log_metric("inference_loss", fp32_loss)
@@ -74,20 +104,15 @@ def quantize(config):
         f"FP32 — accuracy: {fp32_accuracy:.4f}, duration: {fp32_duration:.2f}s, size: {fp32_size:.2f} MB"
     )
 
-    # Apply dynamic quantization
-    print("Applying dynamic quantization...")
-    model_int8 = torch.quantization.quantize_dynamic(
-        model_fp32, {torch.nn.Linear, torch.nn.Conv2d}, dtype=torch.qint8
+    # 5. Benchmark INT8 ONNX
+    print("Running INT8 ONNX inference...")
+    int8_session = ort.InferenceSession(ONNX_INT8_PATH)
+    int8_loss, int8_accuracy, int8_duration = run_onnx_inference(
+        int8_session, test_loader
     )
-    int8_size = get_model_size_mb(model_int8)
 
-    # --- Quantized: INT8 on CPU ---
-    print("Running INT8 quantized inference on CPU...")
-    int8_loss, int8_accuracy, int8_duration = run_inference(model_int8, test_loader)
-
-    with mlflow.start_run(run_name="quantized-int8-cpu-inference"):
-        mlflow.set_tag("quantization", "dynamic_int8")
-        mlflow.set_tag("device", "cpu")
+    with mlflow.start_run(run_name="quantized-int8-onnx-inference"):
+        mlflow.set_tag("quantization", "dynamic_int8_onnx")
         mlflow.set_tag("source_model", f"{MODEL_NAME}@{ALIAS}")
         mlflow.log_metric("inference_accuracy", int8_accuracy)
         mlflow.log_metric("inference_loss", int8_loss)
