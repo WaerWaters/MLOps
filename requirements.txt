@@ -63,3 +63,4 @@ mlflow-tracing==3.10.0
 pytest
 onnxruntime
 onnx
+onnxscript
