@@ -1,12 +1,12 @@
 import yaml
 
-from train_script import train
-
+# from train_script import train
 # from inference_script import inference
 # from quantize import quantize
 # from batch_benchmark import batch_benchmark
 # from pruning import pruning_experiment
 # from finetune_pruned import finetune_pruned
+from carbon_tracking import train_with_carbon_tracking
 import mlflow
 import sys
 
@@ -22,9 +22,10 @@ mlflow.set_tracking_uri(mlflow_server)
 mlflow.set_experiment("dvml8_gruppe1")
 
 
-train(config, git_hash)
+# train(config, git_hash)
 # inference(config, git_hash)
 # quantize(config)
 # batch_benchmark(config)
 # pruning_experiment(config)
 # finetune_pruned(config)
+train_with_carbon_tracking(config)
