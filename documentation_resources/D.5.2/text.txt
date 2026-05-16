@@ -1,0 +1,63 @@
+Find selv på noget, ellers er nogle ideer her:
+
+Functional Testing
+
+The primary endpoint would be POST /predict accepting an image and returning a predicted class (0–199). Functional
+tests would verify:
+
+- Valid 224×224 RGB image → HTTP 200 + valid class index in range [0, 199]
+- Response schema matches expected structure (e.g., {"class": int, "confidence": float})
+- Model loads and responds on startup (health check GET /health → 200)
+
+
+Robustness Testing
+
+This model is particularly vulnerable to malformed image input because the preprocessing pipeline (pixel_values
+tensor of shape [B, 3, 224, 224]) will crash or produce garbage if given unexpected input. Tests should cover:
+
+- Grayscale image sent as RGB (1 channel instead of 3) → should return 400, not a cryptic tensor error
+- Wrong resolution (e.g., 64×64 sent without resizing) → reject or auto-resize with explicit warning
+- Non-image file (PDF, plain text) sent as image → 400 with clear message
+- Oversized payload (e.g., 50 MB TIFF) → 413 before it ever hits the model
+- Corrupt/truncated image bytes → 400 before preprocessing
+
+
+Performance Testing
+
+From the batch benchmark results, single-image latency on GPU is on the order of ~2ms. The target from MM5 is <100ms
+— this model comfortably meets it at BS=1. However, under concurrent load the bottleneck shifts to GPU memory and
+the inference queue.
+
+Locust would be used to simulate concurrent users sending images simultaneously. Key metrics to track:
+- p95 latency under 10/50/100 concurrent users
+- Throughput (requests/sec) before latency degrades
+- Whether the server holds up or starts dropping requests
+
+
+Security Testing
+
+The main security surface for an image classification endpoint:
+
+- Rate limiting: Without it, a single client can flood the GPU with inference requests (a compute-level DoS). This
+is the most realistic attack vector for this model — no exploit needed, just ab or curl in a loop.
+- Payload size cap: Enforce a maximum image size (e.g., 10 MB) at the HTTP layer before the image is decoded.
+- OWASP ZAP: Run automated API scanning in CI to catch auth bypass, injection attempts in headers/parameters, and
+missing security headers.
+- Authentication: If the endpoint is not public, require an API key. Unauthenticated GPU endpoints are a cloud cost
+vulnerability.
+
+
+Safeguarding Inputs and Outputs
+
+Input guards (before model call):
+- Validate MIME type is image (JPEG/PNG)
+- Validate decoded image shape is [H, W, 3] with H, W ≥ 32
+- Auto-resize to 224×224 or reject with 422 — explicit behavior either way
+- Cap payload at e.g. 10 MB at the HTTP layer
+
+Output guards (after model call):
+- Validate predicted class index is in [0, 199] — if the model returns something outside this range (shouldn't
+happen but worth asserting), return a 500 rather than silently propagating a bad answer
+- Return confidence score (softmax max probability) alongside the class; flag predictions below a threshold (e.g.,
+0.3) as low-confidence so the caller can decide whether to trust the result
+- Do not return raw logits to the client — only the top prediction and confidence

@@ -64,3 +64,4 @@ pytest
 onnxruntime
 onnx
 onnxscript
+carbontracker
