@@ -1,0 +1,65 @@
+D6.3 — Drift Detection Setup and Mitigation Strategy
+
+APPROACH
+--------
+We detect data drift at the feature level using a Maximum Mean Discrepancy (MMD)
+test implemented via TorchDrift's KernelMMDDriftDetector.
+
+Rather than comparing raw pixel values, we extract embeddings from the MobileNetV2
+backbone (the production model's feature extractor). Each image is mapped to a
+1280-dimensional vector via global average pooling over the backbone's final
+feature map. This makes the test sensitive to shifts that actually matter to
+the model — not superficial pixel-level differences like brightness changes.
+
+The detector is fitted on 5,000 training samples (the reference distribution).
+At detection time, it computes the MMD statistic between the reference and new
+embeddings and converts it to a p-value via a permutation test. A p-value below
+0.05 is treated as statistically significant drift.
+
+RESULTS
+-------
+We validated the detector by running it on two test sets (1,000 samples each):
+
+  Clean test data (no modification):
+    MMD score: 0.0011  |  p-value: 0.8340  |  Drift detected: No
+
+  Noisy test data (Gaussian noise, std=0.3 added to pixels):
+    MMD score: 0.0407  |  p-value: 0.0000  |  Drift detected: Yes
+
+The clean test data produced a high p-value (0.83), confirming the test correctly
+finds no drift when the distribution is unchanged. Adding Gaussian noise with
+std=0.3 pushed the MMD score up 37x and drove the p-value to essentially zero,
+correctly flagging distribution shift.
+
+MITIGATION STRATEGY
+-------------------
+If drift is detected in production, the response depends on severity:
+
+1. Investigate the source
+   Determine whether the shift is in the input distribution (new image styles,
+   camera artifacts, domain shift) or a labelling/pipeline issue. Drift alone
+   does not mean the model performs worse — it is a signal to investigate.
+
+2. Monitor model performance alongside drift
+   Track accuracy on any available labeled production samples. If accuracy drops
+   in parallel with drift, that confirms the model is degrading.
+
+3. Collect and label drifted samples
+   Build a dataset representative of the new distribution.
+
+4. Fine-tune or retrain
+   Fine-tune the production model on the new data (cheaper) or retrain from
+   scratch if the distribution has shifted substantially.
+
+5. Re-run drift detection post-fix
+   After deploying a new model, refit the drift detector on updated reference
+   data so the baseline reflects the current expected distribution.
+
+PARAMETERS
+----------
+  Reference samples:    5,000 (from training set)
+  Test samples:         1,000
+  Detector:             KernelMMDDriftDetector (TorchDrift)
+  Drift threshold:      p-value < 0.05
+  Validation noise std: 0.3 (Gaussian, added to pixel values)
+  Feature extractor:    MobileNetV2 backbone, global average pooled (1280-dim)

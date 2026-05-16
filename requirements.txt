@@ -66,3 +66,4 @@ onnx
 onnxscript
 carbontracker
 torchdrift
+matplotlib

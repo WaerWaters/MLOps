@@ -1,0 +1,26 @@
+=== Task 1: training on digits 0–4 ===
+  Epoch 1: acc(0-4) = 0.974
+  Epoch 2: acc(0-4) = 0.984
+  Epoch 3: acc(0-4) = 0.993
+
+=== Task 2 Naive: digits 5–9, no replay ===
+  Epoch 1: acc(0-4) = 0.000 | acc(5-9) = 0.936
+  Epoch 2: acc(0-4) = 0.000 | acc(5-9) = 0.970
+  Epoch 3: acc(0-4) = 0.000 | acc(5-9) = 0.980
+  Epoch 4: acc(0-4) = 0.000 | acc(5-9) = 0.984
+  Epoch 5: acc(0-4) = 0.000 | acc(5-9) = 0.985
+
+=== Task 2 Replay+EWC: digits 5–9 with memory buffer ===
+  Epoch 1: acc(0-4) = 0.853 | acc(5-9) = 0.949
+  Epoch 2: acc(0-4) = 0.937 | acc(5-9) = 0.975
+  Epoch 3: acc(0-4) = 0.948 | acc(5-9) = 0.981
+  Epoch 4: acc(0-4) = 0.956 | acc(5-9) = 0.981
+  Epoch 5: acc(0-4) = 0.958 | acc(5-9) = 0.983
+
+=======================================================
+Method                    Acc (0–4)      Acc (5–9)
+-------------------------------------------------------
+Task 1 baseline           0.993          N/A
+Naive sequential          0.000          0.985
+Replay + EWC              0.958          0.983
+=======================================================
