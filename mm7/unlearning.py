@@ -1,8 +1,3 @@
-"""
-Exercise 2: Machine Unlearning via Gradient Ascent
-Forget class 7 from a model trained on all 10 MNIST digits.
-"""
-
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -101,11 +96,6 @@ def main():
         DataLoader(Subset(train_data, retain_idx), batch_size=BATCH, shuffle=True)
     )
 
-    # ── Confuse Unlearning ────────────────────────────────────────────────────
-    # Replace class 7 labels with a uniform distribution over all 10 classes.
-    # Instead of "be confident in the wrong answer" (gradient ascent, unstable),
-    # this teaches "don't be confident in anything" for class 7 inputs.
-    # A paired retain step keeps all other classes intact.
     print(f"\n=== Confuse Unlearning: class {FORGET_CLASS} ({UNLEARN_STEPS} steps) ===")
     unlearn_opt = torch.optim.Adam(model.parameters(), lr=UNLEARN_LR)
     n_classes = 10
@@ -117,14 +107,12 @@ def main():
                 break
             x = x.to(DEVICE)
 
-            # Confuse: push class-7 outputs toward uniform distribution
             unlearn_opt.zero_grad()
             uniform = torch.full((x.size(0), n_classes), 1.0 / n_classes, device=DEVICE)
             log_probs = F.log_softmax(model(x), dim=1)
             F.kl_div(log_probs, uniform, reduction="batchmean").backward()
             unlearn_opt.step()
 
-            # Retain: keep all other classes intact
             rx, ry = next(retain_cycle)
             unlearn_opt.zero_grad()
             F.cross_entropy(model(rx.to(DEVICE)), ry.to(DEVICE)).backward()

@@ -92,12 +92,10 @@ def health():
 def predict(request: PredictRequest):
     start = time.perf_counter()
 
-    # Simulate inference latency (MobileNetV2-like, ~2–15ms)
     time.sleep(random.uniform(0.002, 0.015))
 
     class_idx = random.randint(0, len(CLASS_NAMES) - 1)
     class_name = CLASS_NAMES[class_idx]
-    # Skew confidence toward higher values (softmax of top class)
     confidence = random.betavariate(5, 2)
 
     elapsed = time.perf_counter() - start

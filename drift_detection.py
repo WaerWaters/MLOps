@@ -20,7 +20,6 @@ def _get_feature_extractor(model, device):
     def extract(pixel_values):
         with torch.no_grad():
             out = backbone(pixel_values)
-            # Global average pool over spatial dims → (B, C)
             return out.last_hidden_state.mean(dim=[2, 3])
 
     return extract

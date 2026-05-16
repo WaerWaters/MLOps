@@ -69,9 +69,6 @@ def train_epoch(model, loader, optimizer, ewc=None):
 
 
 class EWC:
-    """Elastic Weight Consolidation: penalises changes to weights that were
-    important for Task 1, estimated via the diagonal of the Fisher Information Matrix."""
-
     def __init__(self, model, dataset, lam):
         self.lam = lam
         self.opt = {
@@ -189,7 +186,6 @@ def main():
     epochs = list(range(1, EPOCHS_T2 + 1))
     fig, axes = plt.subplots(1, 2, figsize=(12, 5))
 
-    # Left: accuracy on old task (0-4) — this shows forgetting
     axes[0].axhline(
         baseline_t1,
         color="gray",
@@ -205,7 +201,6 @@ def main():
     axes[0].set_ylim(0, 1.05)
     axes[0].legend()
 
-    # Right: accuracy on new task (5-9)
     axes[1].plot(epochs, naive_new, "r-o", linewidth=2, label="Naive")
     axes[1].plot(epochs, replay_new, "b-o", linewidth=2, label="Replay + EWC")
     axes[1].set_title("Accuracy on new task (digits 5–9)")
