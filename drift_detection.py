@@ -120,23 +120,27 @@ def drift_detection(config):
         detector, noisy_embeddings, f"noisy (std={NOISE_STD})"
     )
 
-    with mlflow.start_run(run_name="drift-detection"):
-        mlflow.log_param("reference_samples", REFERENCE_SAMPLES)
-        mlflow.log_param("test_samples", TEST_SAMPLES)
-        mlflow.log_param("drift_threshold", DRIFT_P_VALUE_THRESHOLD)
+    shared_params = {
+        "reference_samples": REFERENCE_SAMPLES,
+        "test_samples": TEST_SAMPLES,
+        "drift_threshold": DRIFT_P_VALUE_THRESHOLD,
+        "detector": "KernelMMDDriftDetector",
+    }
+
+    with mlflow.start_run(run_name="drift-detection-clean"):
+        mlflow.log_params(shared_params)
+        mlflow.log_param("noise_std", 0.0)
+        mlflow.log_metric("mmd_score", clean_score)
+        mlflow.log_metric("p_value", clean_p)
+        mlflow.log_metric("drift_detected", int(clean_drifted))
+
+    with mlflow.start_run(run_name="drift-detection-noisy"):
+        mlflow.log_params(shared_params)
         mlflow.log_param("noise_std", NOISE_STD)
-        mlflow.log_param("detector", "KernelMMDDriftDetector")
+        mlflow.log_metric("mmd_score", noisy_score)
+        mlflow.log_metric("p_value", noisy_p)
+        mlflow.log_metric("drift_detected", int(noisy_drifted))
 
-        # step=0 → clean, step=1 → noisy: shares the same plot per metric in MLflow
-        mlflow.log_metric("mmd_score", clean_score, step=0)
-        mlflow.log_metric("mmd_score", noisy_score, step=1)
-
-        mlflow.log_metric("p_value", clean_p, step=0)
-        mlflow.log_metric("p_value", noisy_p, step=1)
-
-        mlflow.log_metric("drift_detected", int(clean_drifted), step=0)
-        mlflow.log_metric("drift_detected", int(noisy_drifted), step=1)
-
-        print("\nSummary:")
-        print(f"  Clean test data  — drift detected: {clean_drifted}")
-        print(f"  Noisy test data  — drift detected: {noisy_drifted}")
+    print("\nSummary:")
+    print(f"  Clean test data  — drift detected: {clean_drifted}")
+    print(f"  Noisy test data  — drift detected: {noisy_drifted}")
