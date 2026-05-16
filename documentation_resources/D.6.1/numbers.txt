@@ -1,0 +1,19 @@
+CarbonTracker:
+Actual consumption for 1 epoch(s):
+	Time:	0:04:45
+	Energy:	0.009935662142 kWh
+	CO2eq:	1.423784557909 g
+	This is equivalent to:
+	0.013331316085 km travelled by car
+CarbonTracker: Finished monitoring.
+Training duration: 285.18s
+Training energy:  0.009936 kWh
+Training CO2eq:   1.4238 g
+
+
+Produktions modellen er trænet i 10 epochs, så ved linear scaling er kosten:
+	Time:	0:47:30
+	Energy:	0.09935662142 kWh
+	CO2eq:	14.23784557909 g
+    This is equivalent to:
+	0.13331316085 km travelled by car

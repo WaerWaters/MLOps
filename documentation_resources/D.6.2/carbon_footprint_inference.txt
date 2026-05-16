@@ -1,0 +1,57 @@
+D6.2 — Yearly Carbon Footprint: Inference
+
+This assumes Batch Size = 1. (So one image is sent in and immediately processed, without any batching)
+
+This also assumes a shared GPU cluster, where we meassure only the active time. If this were a dedicated GPU, then the idle consumption would completely dominate.
+
+USE-CASE ASSUMPTIONS
+--------------------
+Scenario:
+    A real-time image classification REST API. Users (or automated systems)
+    submit a single image and receive an immediate class prediction.
+
+Hardware:        NVIDIA A100 GPU (TDP = 400 W)
+Inference time:  0.0021 s per request (BS=1, measured via batch benchmark)
+Daily requests:  5,000
+Annual requests: 5,000 × 365 = 1,825,000
+Carbon intensity: 170 gCO2eq/kWh (Denmark, 2024)
+PUE:             1.2
+
+
+CALCULATIONS
+------------
+Energy per request (active GPU time only):
+    = (TDP in kW) × (latency in hours) × PUE
+    = (400 / 1000) × (0.0021 / 3600) × 1.2
+    = 0.4 × 0.000000583 × 1.2
+    = 2.80 × 10^-7 kWh per request
+
+CO2eq per request:
+    = 2.80 × 10^-7 kWh × 170 gCO2eq/kWh
+    = 4.76 × 10^-5 g CO2eq
+    ≈ 0.048 mg CO2eq per request
+
+Total active GPU time per year:
+    = 1,825,000 requests × 0.0021 s
+    = 3,832 s ≈ 1.06 hours/year
+
+Annual energy consumed:
+    = 1,825,000 × 2.80 × 10^-7 kWh
+    = 0.511 kWh/year
+
+Annual CO2eq emitted:
+    = 0.511 kWh × 170 gCO2eq/kWh
+    = 86.9 g CO2eq/year
+
+
+COMPARISON TO TRAINING COST (D6.1)
+-----------------------------------
+                                Energy (kWh)    CO2eq (g)
+  1 training epoch              0.00994         1.42
+  Full training run (10 epochs) 0.09936         14.24
+  1 year of inference (5k/day)  0.511           86.9
+
+Yearly inference at this request volume emits approximately 6x more CO2eq
+than a single full training run. However, in absolute terms the footprint
+is very small — 86.9 g CO2eq/year is roughly equivalent to driving a car
+for 0.6 km.
