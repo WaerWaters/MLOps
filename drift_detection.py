@@ -9,7 +9,7 @@ ALIAS = "production"
 REFERENCE_SAMPLES = 5000
 TEST_SAMPLES = 1000
 DRIFT_P_VALUE_THRESHOLD = 0.05
-NOISE_STD = 0.5
+NOISE_STD = 0.3
 
 
 def _get_feature_extractor(model, device):
@@ -127,13 +127,15 @@ def drift_detection(config):
         mlflow.log_param("noise_std", NOISE_STD)
         mlflow.log_param("detector", "KernelMMDDriftDetector")
 
-        mlflow.log_metric("clean_mmd_score", clean_score)
-        mlflow.log_metric("clean_p_value", clean_p)
-        mlflow.log_metric("clean_drift_detected", int(clean_drifted))
+        # step=0 → clean, step=1 → noisy: shares the same plot per metric in MLflow
+        mlflow.log_metric("mmd_score", clean_score, step=0)
+        mlflow.log_metric("mmd_score", noisy_score, step=1)
 
-        mlflow.log_metric("noisy_mmd_score", noisy_score)
-        mlflow.log_metric("noisy_p_value", noisy_p)
-        mlflow.log_metric("noisy_drift_detected", int(noisy_drifted))
+        mlflow.log_metric("p_value", clean_p, step=0)
+        mlflow.log_metric("p_value", noisy_p, step=1)
+
+        mlflow.log_metric("drift_detected", int(clean_drifted), step=0)
+        mlflow.log_metric("drift_detected", int(noisy_drifted), step=1)
 
         print("\nSummary:")
         print(f"  Clean test data  — drift detected: {clean_drifted}")
