@@ -10,6 +10,13 @@ from models.image_classifier import ImageModel
 import mlflow
 from carbontracker.tracker import CarbonTracker
 
+# A100 GPU TDP (Watt) — fallback when NVML is unavailable
+_A100_TDP_W = 400
+# Denmark average carbon intensity gCO2eq/kWh (2024)
+_DK_CARBON_INTENSITY = 170
+# Typical university data-center PUE
+_PUE = 1.2
+
 
 def _parse_carbontracker_log(log_dir):
     logs = sorted(f for f in glob.glob(f"{log_dir}/*.log") if "_detail" not in f)
@@ -34,6 +41,13 @@ def _parse_carbontracker_log(log_dir):
                 m = re.search(r"CO2[a-z]*:\s+([\d.e+-]+)\s+g", line)
                 if m:
                     co2_g = float(m.group(1))
+    return energy_kwh, co2_g
+
+
+def _estimate_carbon_manual(duration_seconds):
+    """Fallback: estimate energy from A100 TDP + Denmark carbon intensity."""
+    energy_kwh = (_A100_TDP_W / 1000) * (duration_seconds / 3600) * _PUE
+    co2_g = energy_kwh * _DK_CARBON_INTENSITY
     return energy_kwh, co2_g
 
 
@@ -72,14 +86,26 @@ def train_with_carbon_tracking(config):
     model.train()
 
     ct_log_dir = tempfile.mkdtemp(prefix="carbontracker_")
-    tracker = CarbonTracker(epochs=epochs, log_dir=ct_log_dir, verbose=2)
+    # components="gpu" skips Intel RAPL which is unavailable in Docker
+    tracker = CarbonTracker(
+        epochs=epochs, log_dir=ct_log_dir, verbose=2, components="gpu"
+    )
+    tracker_ok = True
 
     with mlflow.start_run(run_name="carbon-tracking-train"):
         mlflow.log_params(config)
 
         train_start = time.time()
         for epoch in range(epochs):
-            tracker.epoch_start()
+            if tracker_ok:
+                try:
+                    tracker.epoch_start()
+                except Exception as e:
+                    print(
+                        f"CarbonTracker epoch_start failed: {e}. Continuing without tracking."
+                    )
+                    tracker_ok = False
+
             for batch in train_loader:
                 batch = {k: v.to(device) for k, v in batch.items()}
                 outputs = model(**batch)
@@ -89,24 +115,48 @@ def train_with_carbon_tracking(config):
                 loss.backward()
                 optimizer.step()
                 print(f"Loss: {loss.item():.4f}")
-            tracker.epoch_end()
 
-        tracker.stop()
+            if tracker_ok:
+                try:
+                    tracker.epoch_end()
+                except Exception as e:
+                    print(
+                        f"CarbonTracker epoch_end failed: {e}. Continuing without tracking."
+                    )
+                    tracker_ok = False
 
         training_duration = time.time() - train_start
         mlflow.log_metric("training_duration_seconds", training_duration)
         print(f"Training duration: {training_duration:.2f}s")
 
-        energy_kwh, co2_g = _parse_carbontracker_log(ct_log_dir)
-        if energy_kwh is not None:
-            mlflow.log_metric("training_energy_kwh", energy_kwh)
-            print(f"Training energy:  {energy_kwh:.6f} kWh")
-        if co2_g is not None:
-            mlflow.log_metric("training_co2_g", co2_g)
-            print(f"Training CO2eq:   {co2_g:.4f} g")
+        energy_kwh, co2_g = None, None
 
-        for lf in glob.glob(f"{ct_log_dir}/*.log"):
-            mlflow.log_artifact(lf, artifact_path="carbontracker")
+        if tracker_ok:
+            try:
+                tracker.stop()
+                energy_kwh, co2_g = _parse_carbontracker_log(ct_log_dir)
+                mlflow.set_tag("carbon_source", "carbontracker_gpu")
+                for lf in glob.glob(f"{ct_log_dir}/*.log"):
+                    mlflow.log_artifact(lf, artifact_path="carbontracker")
+            except Exception as e:
+                print(
+                    f"CarbonTracker stop/parse failed: {e}. Falling back to manual estimate."
+                )
+
+        if energy_kwh is None:
+            energy_kwh, co2_g = _estimate_carbon_manual(training_duration)
+            mlflow.set_tag(
+                "carbon_source",
+                f"manual_estimate_A100_{_A100_TDP_W}W_DK_{_DK_CARBON_INTENSITY}gCO2/kWh",
+            )
+            print(
+                "Using manual carbon estimate (carbontracker unavailable in this environment)."
+            )
+
+        mlflow.log_metric("training_energy_kwh", energy_kwh)
+        mlflow.log_metric("training_co2_g", co2_g)
+        print(f"Training energy:  {energy_kwh:.6f} kWh")
+        print(f"Training CO2eq:   {co2_g:.4f} g")
 
         os.makedirs(os.path.dirname(save_path), exist_ok=True)
         torch.save(model.state_dict(), save_path)
