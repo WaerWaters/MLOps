@@ -9,6 +9,7 @@ MobileNetV2 image classifier on Tiny ImageNet (200 classes), built as part of th
 | Model | MobileNetV2 (HuggingFace Transformers) |
 | Dataset | Tiny ImageNet — 200 classes |
 | Experiment tracking | MLflow|
+| Data versioning | DVC |
 | CI/CD | Jenkins → Docker → university GPU cluster |
 
 ## Pipeline
