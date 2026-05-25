@@ -2,7 +2,7 @@ Performing recovery on 30% pruned model.
 
 Baseline is 0.395 Accuracy
 
-After pruning Accuracy is: 0.2970
+After pruning Accuracy is: 0.2860
 
 Recover epochs:
 
@@ -13,6 +13,6 @@ Epoch   Train Loss   Val Accuracy
      2       1.3785         0.4287
      3       1.2600         0.4243
 
-Accuracy before fine-tuning (val):  0.3090
+Accuracy before fine-tuning (val):  0.2860
 Accuracy after fine-tuning (test):  0.4201
-Recovery:                           +0.1111
+Recovery:                           +0.1341
