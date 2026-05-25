@@ -5,7 +5,7 @@ import yaml
 # from quantize import quantize
 # from batch_benchmark import batch_benchmark
 # from pruning import pruning_experiment
-from finetune_pruned import finetune_pruned
+# from finetune_pruned import finetune_pruned
 
 # from carbon_tracking import train_with_carbon_tracking
 # from drift_detection import drift_detection
@@ -29,6 +29,6 @@ mlflow.set_experiment("dvml8_gruppe1")
 # quantize(config)
 # batch_benchmark(config)
 # pruning_experiment(config)
-finetune_pruned(config)
+# finetune_pruned(config)
 # train_with_carbon_tracking(config)
 # drift_detection(config)

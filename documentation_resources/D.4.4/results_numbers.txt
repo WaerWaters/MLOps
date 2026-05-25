@@ -6,15 +6,13 @@ After pruning Accuracy is: 0.2970
 
 Recover epochs:
 
+
 Epoch   Train Loss   Val Accuracy
 ------------------------------------
-     1       1.7020         0.3980
-     2       1.4018         0.3960
-     3       1.2533         0.3870
+     1       1.5557         0.4315
+     2       1.3785         0.4287
+     3       1.2600         0.4243
 
-Accuracy before fine-tuning (val):  0.2970
-Accuracy after fine-tuning (test):  0.3710
-Recovery:                           +0.0740
-
-
-Already the first Epoch recovers the performance. The remaining might start overfittin the small sets that are used (or are just noise).
+Accuracy before fine-tuning (val):  0.3090
+Accuracy after fine-tuning (test):  0.4201
+Recovery:                           +0.1111
